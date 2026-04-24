@@ -215,11 +215,11 @@ func (m model) handlesKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	if keyMatches(key, api.AppConfig.Keybinds.Queue.QueueNext) {
-		return mediaQueueNext(m), nil
+		return mediaQueueNext(m)
 	}
 
 	if keyMatches(key, api.AppConfig.Keybinds.Queue.QueueLast) {
-		return mediaQueueLast(m), nil
+		return mediaQueueLast(m)
 	}
 
 	if keyMatches(key, api.AppConfig.Keybinds.Queue.RemoveFromQueue) {
@@ -919,25 +919,29 @@ func mediaVolumeDown(m model, _ tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func mediaQueueNext(m model) model {
+func mediaQueueNext(m model) (model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	// Continue when main focus
 	if m.focus != focusMain {
-		return m
+		return m, nil
 	}
 
 	// Continue on songs and albums
 	if m.displayMode == displayArtist {
-		return m
+		return m, nil
 	}
 
 	selectedSongs := getSelectedSongs(m)
 	if len(selectedSongs) == 0 {
-		return m
+		return m, nil
 	}
 
 	if len(m.queue) == 0 { // Create a new queue
 		m.queue = selectedSongs
 		m.queueIndex = 0
+
+		cmd = m.playQueueIndex(0, false)
 	} else { // Add to current queue
 		insertAt := m.queueIndex + 1
 		tail := append([]api.Song{}, m.queue[insertAt:]...)
@@ -951,32 +955,41 @@ func mediaQueueNext(m model) model {
 	// Sync MPV's Queue
 	m.syncNextSong()
 
-	return m
+	return m, cmd
 }
 
-func mediaQueueLast(m model) model {
+func mediaQueueLast(m model) (model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	// Continue when main focus
 	if m.focus != focusMain {
-		return m
+		return m, nil
 	}
 
 	// Continue on songs and albums
 	if m.displayMode == displayArtist {
-		return m
+		return m, nil
 	}
 
 	selectedSongs := getSelectedSongs(m)
 	if len(selectedSongs) == 0 {
-		return m
+		return m, nil
 	}
+
+	wasEmpty := len(m.queue) == 0
 
 	// Set new queue
 	m.queue = append(m.queue, selectedSongs...)
 
+	if wasEmpty {
+		m.queueIndex = 0
+		cmd = m.playQueueIndex(0, false)
+	}
+
 	// Sync MPV's Queue
 	m.syncNextSong()
 
-	return m
+	return m, cmd
 }
 
 func mediaDeleteSongFromQueue(m model) model {
