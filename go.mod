@@ -16,6 +16,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.19
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/rmhubbert/bubbletea-overlay v0.6.3
+	golang.org/x/image v0.36.0
 	golang.org/x/text v0.34.0
 )
 
@@ -45,7 +46,6 @@ require (
 	github.com/sergeymakinen/go-ico v1.0.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/image v0.36.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )
