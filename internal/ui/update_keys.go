@@ -1109,6 +1109,14 @@ func mediaSongUpQueue(m model) model {
 		}
 
 		m.cursorMain--
+
+		// Scroll when cursor out of view
+		if m.cursorMain < m.mainOffset {
+			m.mainOffset = m.cursorMain
+		} else if m.showSelection && minIndex-1 < m.mainOffset {
+			m.mainOffset = minIndex - 1
+		}
+
 	}
 
 	m.syncNextSong()
@@ -1155,11 +1163,20 @@ func mediaSongDownQueue(m model) model {
 		}
 
 		m.cursorMain++
+
+		// Scroll when cursor out of view
+		visibleRows := m.height - 17
+		if m.cursorMain >= m.mainOffset+visibleRows {
+			m.mainOffset = m.cursorMain - visibleRows + 1
+		} else if m.showSelection && maxIndex+1 >= m.mainOffset+visibleRows {
+			m.mainOffset = (maxIndex + 1) - visibleRows + 1
+		}
 	}
 
 	m.syncNextSong()
 	return m
 }
+
 func mediaRestartSong(m model) model {
 	if m.focus != focusSearch {
 		player.RestartSong()
