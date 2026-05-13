@@ -742,9 +742,14 @@ func mediaPlayerContent(m model) string {
 	var mediaPlayerContent string
 	var progressBarContent string
 
-	availableWidth = m.width - 4       // 2 * 2 borders
-	availableHeight = m.height - 3     // 3: progress bar
-	sideHeight = availableHeight - 3   // 3 borders
+	availableWidth = m.width - 4   // 2 * 2 borders
+	availableHeight = m.height - 3 // 3: progress bar
+
+	if availableHeight <= 0 {
+		return ""
+	}
+
+	sideHeight = availableHeight
 	lyricsHeight = availableHeight - 2 // 2 borders
 
 	sideContentWidth = int(float64(availableWidth) * 0.4)
@@ -778,35 +783,76 @@ func mediaPlayerSideContent(m model, width int, height int) string {
 	var queueHeight int
 	var coverArtHeight int
 
-	queueHeight = 7      // STATIC: 5 SONGS + TITLE + HEADER
 	mediaInfoHeight = 12 // STATIC: 9 ATTIRBUTES + STATUS + 2 PADDINGS
+
+	if mediaInfoHeight > height-2 {
+		mediaInfoHeight = height - 2
+		if mediaInfoHeight < 0 {
+			mediaInfoHeight = 0
+		}
+	}
+
+	songContentStr := mediaPlayerSideSongContent(m, width, mediaInfoHeight)
+
+	if mediaInfoHeight < 12 {
+		songContentStr = lipgloss.NewStyle().MaxHeight(mediaInfoHeight).Render(songContentStr)
+	}
 
 	// Media Info
 	mediaPlayerSongContent = borderStyle.
 		Width(width).
 		Height(mediaInfoHeight).
-		Render(mediaPlayerSideSongContent(m, width, mediaInfoHeight))
+		Render(songContentStr)
 
-	// Queue
-	if m.coverArt == nil {
-		queueHeight = height - lipgloss.Height(mediaPlayerSongContent) + 1
+	remainingHeight := height - lipgloss.Height(mediaPlayerSongContent)
+	sections := []string{mediaPlayerSongContent}
+
+	showCoverArt := m.coverArt != nil
+
+	// if there is not enough space for the cover art, hide it and expand the queue
+	if showCoverArt {
+		if remainingHeight-9 < 8 {
+			showCoverArt = false
+		}
 	}
-	mediaPlayerQueueContent = borderStyle.
-		Width(width).
-		Height(queueHeight).
-		Render(mediaPlayerSideQueueContent(m, width, queueHeight))
 
-	sections := []string{mediaPlayerSongContent, mediaPlayerQueueContent}
+	if remainingHeight >= 4 {
+		if !showCoverArt {
+			queueHeight = remainingHeight - 2
+		} else {
+			queueHeight = 7 // standard height
+			if queueHeight > remainingHeight-2 {
+				queueHeight = remainingHeight - 2
+			}
+		}
+
+		queueContentStr := mediaPlayerSideQueueContent(m, width, queueHeight)
+		queueContentStr = lipgloss.NewStyle().MaxHeight(queueHeight).Render(queueContentStr)
+
+		mediaPlayerQueueContent = borderStyle.
+			Width(width).
+			Height(queueHeight).
+			Render(queueContentStr)
+
+		sections = append(sections, mediaPlayerQueueContent)
+		remainingHeight -= lipgloss.Height(mediaPlayerQueueContent)
+	} else {
+		remainingHeight = 0
+	}
 
 	// Cover Art
-	if m.coverArt != nil { // only render if enabled
-		coverArtHeight = height - lipgloss.Height(mediaPlayerSongContent) - lipgloss.Height(mediaPlayerQueueContent) + 1
+	if showCoverArt && remainingHeight >= 3 {
+		coverArtHeight = remainingHeight - 2
+
+		coverArtStr := m.coverMosaic.Render(m.coverArt)
+		coverArtStr = lipgloss.NewStyle().MaxHeight(coverArtHeight).Render(coverArtStr)
+
 		sections = append(sections, borderStyle.
 			Width(width).
 			Height(coverArtHeight).
 			Align(lipgloss.Center).
 			AlignVertical(lipgloss.Center).
-			Render(m.coverMosaic.Render(m.coverArt)))
+			Render(coverArtStr))
 	}
 
 	// Combining
@@ -1048,7 +1094,7 @@ func mediaPlayerLyricsContent(m model, width int, height int) string {
 		Width(width).
 		Height(height).
 		Align(lipgloss.Center).
-		Render(finalLyrics)
+		Render(lipgloss.NewStyle().MaxHeight(height).Render(finalLyrics))
 }
 
 // Generate the media player progress bar
@@ -1606,7 +1652,7 @@ func calculateCoverArtSize(m model) (int, int) {
 	}
 
 	maxWidth := int(float64(m.width) * 0.4)
-	maxHeight := m.height - 3 - 14 - 9 // 3: progress bar | 14: media info | 9: queue | 2: cover art borders
+	maxHeight := m.height - 3 - 14 - 9 - 2 // 3: progress bar | 14: media info | 9: queue | 2: cover art borders
 
 	// Try to fill vertically
 	width := maxWidth
