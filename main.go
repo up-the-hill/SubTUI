@@ -98,6 +98,7 @@ func main() {
 	// Start TUI
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error while running program:", err)
+		player.ShutdownPlayer() // kill mpv
 		os.Exit(1)
 	}
 }
