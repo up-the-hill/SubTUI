@@ -1252,6 +1252,7 @@ func helpViewContent() string {
 	otherKeybinds := section("OTHERS",
 		line(keys(api.AppConfig.Keybinds.Other.ToggleNotifications), "Toggle notifications"),
 		line(keys(api.AppConfig.Keybinds.Other.CreateShareLink), "Create share link"),
+		line(keys(api.AppConfig.Keybinds.Other.StartRadio), "Start radio"),
 	)
 
 	columnLeft := lipgloss.JoinVertical(lipgloss.Left,
